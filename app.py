@@ -27,19 +27,6 @@ import prediction_models
 
 app = Flask(__name__)
 app.config.from_object('config')
-oauth = OAuth(app)
-
-auth0 = oauth.register(
-    'auth0',
-    client_id=app.config['OAUTH_CLIENT_ID'],
-    client_secret=app.config['OAUTH_CLIENT_SECRET'],
-    api_base_url=app.config['OAUTH_API_BASE_URL'],
-    access_token_url=app.config['OAUTH_ACCESS_TOKEN_URL'],
-    authorize_url=app.config['OAUTH_AUTHORIZE_URL'],
-    client_kwargs={
-        'scope': 'openid profile',
-    },
-)
 
 logging.basicConfig(
     level='INFO'
@@ -58,13 +45,7 @@ def requires_auth(f):
 
 
 def create_client(session):
-    return new_raw_client(
-        executor_url=app.config['EXECUTOR_URL'],
-        creds_url=app.config['CREDS_URL'],
-        auth='auth0',
-        auth0_auth_type='access_token',
-        access_token=session['token_info']['access_token']
-    )
+    return new_raw_client()
 
 
 def init_packages(session):
@@ -115,29 +96,21 @@ def home():
 # Here we're using the /callback route.
 @app.route('/callback')
 def callback_handling():
-    # Handles response from token endpoint
-    # Stores token in flask session
-    session['token_info'] = auth0.authorize_access_token()
-    resp = auth0.get('userinfo')
-    userinfo = resp.json()
 
-    # Store the user information in flask session.
-    session['jwt_payload'] = userinfo
-    session['profile'] = {
-        'user_id': userinfo['sub'],
-        'name': userinfo['name'],
-        'picture': userinfo['picture']
-    }
     # initializes raw-client, buckets, etc.
+    session['profile'] = {
+                'user_id': 'user',
+                'name': 'user',
+                'picture': ''
+    }
+
     init_packages(session)
     return redirect(url_for('machines'))
 
 
 @app.route('/login')
 def login():
-    return auth0.authorize_redirect(redirect_uri=url_for('callback_handling', _external=True),
-                                        audience=app.config['OAUTH_AUDIENCE'])
-
+    return redirect('callback')
 
 @app.route('/logout')
 def logout():
