@@ -4,6 +4,8 @@ Flask-WTF
 WTForms
 coverage
 rawapi
+sklearn
+authlib
 # ecdsa
 # paramiko
 # pycrypto
