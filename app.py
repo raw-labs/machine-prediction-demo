@@ -96,7 +96,6 @@ def home():
 # Here we're using the /callback route.
 @app.route('/callback')
 def callback_handling():
-
     # initializes raw-client, buckets, etc.
     session['profile'] = {
                 'user_id': 'user',
@@ -118,11 +117,11 @@ def logout():
 
 
 @app.route('/do_logout')
+@requires_auth
 def do_logout():
     # Clear session stored data
     session.clear()
-    params = {'returnTo': url_for('logout', _external=True), 'client_id': app.config['OAUTH_CLIENT_ID']}
-    return redirect(app.config['OAUTH_LOGOUT_URL'] + urlencode(params))
+    return redirect(url_for('logout'))
 
 
 @app.route('/machines/list')
