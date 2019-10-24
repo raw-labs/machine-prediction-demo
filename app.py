@@ -33,24 +33,12 @@ logging.basicConfig(
 )
 
 
-def requires_auth(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'profile' not in session:
-            # Redirect to Login page here
-            return redirect('/login')
-        return f(*args, **kwargs)
-
-    return decorated
-
-
-def create_client(session):
+def create_client():
     return new_raw_client()
 
 
-def init_packages(session):
-    """Initializes packages, s3 buckets, etc for this session"""
-    client = create_client(session)
+def init_packages():
+    client = create_client()
     # Registering buckets
     with open(os.path.join('raw_ini', 'buckets.txt')) as f:
         buckets = client.buckets_list()
@@ -74,7 +62,7 @@ def init_packages(session):
         name = os.path.basename(filename[:-4])
         if name in packages:
             app.logger.warning('overwriting package %s' % name)
-            client.packages_delete(name)
+            client.packages_drop(name)
         with open(filename) as f:
             app.logger.info('registering package %s' % name)
             client.packages_create(name, f.read())
@@ -93,42 +81,11 @@ def home():
     return redirect(url_for('machines'))
 
 
-# Here we're using the /callback route.
-@app.route('/callback')
-def callback_handling():
-    # initializes raw-client, buckets, etc.
-    session['profile'] = {
-                'user_id': 'user',
-                'name': 'user',
-                'picture': ''
-    }
-
-    init_packages(session)
-    return redirect(url_for('machines'))
-
-
-@app.route('/login')
-def login():
-    return redirect('callback')
-
-@app.route('/logout')
-def logout():
-    return render_template('pages/logged_out.html')
-
-
-@app.route('/do_logout')
-@requires_auth
-def do_logout():
-    # Clear session stored data
-    session.clear()
-    return redirect(url_for('logout'))
-
 
 @app.route('/machines/list')
-@requires_auth
 def machines_list():
     """List all available machines with main data"""
-    client = create_client(session)
+    client = create_client()
     data = client.query('''
         from machine_maintenance import machine_data, maint;
         
@@ -150,10 +107,9 @@ def machines_list():
 
 
 @app.route('/machines/warnings')
-@requires_auth
 def machines_warnings():
     """Service to get current warnings on machines."""
-    client = create_client(session)
+    client = create_client()
     results = client.query('''
         from machine_maintenance import machines;
         
@@ -178,10 +134,9 @@ def machines_warnings():
 
 
 @app.route('/machines/report/failures_month')
-@requires_auth
 def machines_failures_month():
     """Service just for plot 1 in main page"""
-    client = create_client(session)
+    client = create_client()
     results = client.query('''
         from machine_maintenance import failures, machines;
         
@@ -195,10 +150,9 @@ def machines_failures_month():
 
 
 @app.route('/machines/report/failures_model')
-@requires_auth
 def machines_failures_model():
     """Service just for plot 2 in main page"""
-    client = create_client(session)
+    client = create_client()
     results = client.query('''
         from machine_maintenance import failures, machines;
         
@@ -216,11 +170,10 @@ logging.info("using %s as features folder" % features_dir.name)
 
 
 @app.route('/machines/create_features', methods=['POST'])
-@requires_auth
 def machines_create_features():
     """Creates features for predictive maintenance training"""
     data = request.json
-    client = create_client(session)
+    client = create_client()
     q = client.query('''
         from machine_maintenance import features;
         
@@ -244,7 +197,6 @@ def machines_create_features():
 
 
 @app.route('/machines/model_train', methods=['POST'])
-@requires_auth
 def machines_model_train():
     """Trains classifier and returns json with results"""
     data = request.json
@@ -255,22 +207,19 @@ def machines_model_train():
 
 
 @app.route('/machines')
-@requires_auth
 def machines():
     return render_template('pages/machines.html')
 
 
 @app.route('/machines/train')
-@requires_auth
 def machines_train():
     return render_template('pages/machines_train.html')
 
 
 @app.route('/machines/<int:machine_id>/status/')
-@requires_auth
 def machine_status(machine_id):
     """Service for individual machine status"""
-    client = create_client(session)
+    client = create_client()
     results = client.query('''
         from machine_maintenance import machine_data, maint;
 
@@ -284,11 +233,10 @@ def machine_status(machine_id):
 
 
 @app.route('/machines/<int:machine_id>/telemetry/')
-@requires_auth
 def machine_telemetry(machine_id):
     """Service for individual machine telemetry reading
         needs url encoded arguments for start and end of measurements"""
-    client = create_client(session)
+    client = create_client()
     start = request.args.get('start')
     end = request.args.get('end')
     results = client.query('''
@@ -307,7 +255,6 @@ def machine_telemetry(machine_id):
 
 
 @app.route('/machines/<int:machine_id>')
-@requires_auth
 def single_machine(machine_id):
     return render_template('pages/single_machine.html', machine_id=machine_id)
 
@@ -342,6 +289,7 @@ if not app.debug:
 
 # Default port:
 if __name__ == '__main__':
+    init_packages()
     app.run()
 
 # Or specify port manually:

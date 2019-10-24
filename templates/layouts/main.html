@@ -62,21 +62,6 @@
             <li {% if request.endpoint=='machines' %} class="active" {% endif %}><a href="{{ url_for('machines') }}">Machines</a></li>
             <li {% if request.endpoint=='machines_train' %} class="active" {% endif %}><a href="{{ url_for('machines_train') }}">Train Maintenance Model</a></li>
         </ul>
-        <ul class="nav navbar-nav navbar-right">
-            {% if 'profile' in session %}
-            <li class="dropdown">
-                <a class="dropdown-toggle" data-toggle="dropdown">Settings <b class="caret"></b></a>
-                <ul class="dropdown-menu">
-                    <li class="dropdown-header">Signed in as <strong>{{ session['profile']['name'] }}</strong></li>
-                    <li><a href="http://docs.raw-labs.com/">Documentation</a></li>
-                    <li><a href="https://www.youtube.com/playlist?list=PLK2r8sdyiq2UHBj62rmN_FsanQQ3T0CHP"><strong>Tutorials</strong></a>
-                    </li>
-                    <li class="divider"></li>
-                    <li><a  href="{{ url_for('do_logout') }}">Sign out</a></li>
-                </ul>
-            </li>
-        </ul>
-        {% endif %}
     </div>
 </div>>
 
