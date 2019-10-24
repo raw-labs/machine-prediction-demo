@@ -33,12 +33,10 @@ logging.basicConfig(
 )
 
 
-def create_client():
-    return new_raw_client()
+client = new_raw_client()
 
 
 def init_packages():
-    client = create_client()
     # Registering buckets
     with open(os.path.join('raw_ini', 'buckets.txt')) as f:
         buckets = client.buckets_list()
@@ -85,7 +83,6 @@ def home():
 @app.route('/machines/list')
 def machines_list():
     """List all available machines with main data"""
-    client = create_client()
     data = client.query('''
         from machine_maintenance import machine_data, maint;
         
@@ -109,7 +106,6 @@ def machines_list():
 @app.route('/machines/warnings')
 def machines_warnings():
     """Service to get current warnings on machines."""
-    client = create_client()
     results = client.query('''
         from machine_maintenance import machines;
         
@@ -136,7 +132,6 @@ def machines_warnings():
 @app.route('/machines/report/failures_month')
 def machines_failures_month():
     """Service just for plot 1 in main page"""
-    client = create_client()
     results = client.query('''
         from machine_maintenance import failures, machines;
         
@@ -152,7 +147,6 @@ def machines_failures_month():
 @app.route('/machines/report/failures_model')
 def machines_failures_model():
     """Service just for plot 2 in main page"""
-    client = create_client()
     results = client.query('''
         from machine_maintenance import failures, machines;
         
@@ -173,7 +167,6 @@ logging.info("using %s as features folder" % features_dir.name)
 def machines_create_features():
     """Creates features for predictive maintenance training"""
     data = request.json
-    client = create_client()
     q = client.query('''
         from machine_maintenance import features;
         
@@ -219,7 +212,6 @@ def machines_train():
 @app.route('/machines/<int:machine_id>/status/')
 def machine_status(machine_id):
     """Service for individual machine status"""
-    client = create_client()
     results = client.query('''
         from machine_maintenance import machine_data, maint;
 
@@ -236,7 +228,6 @@ def machine_status(machine_id):
 def machine_telemetry(machine_id):
     """Service for individual machine telemetry reading
         needs url encoded arguments for start and end of measurements"""
-    client = create_client()
     start = request.args.get('start')
     end = request.args.get('end')
     results = client.query('''
