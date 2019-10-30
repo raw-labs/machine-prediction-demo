@@ -120,7 +120,7 @@ def machines_warnings():
         timestamp = '2019-05-23 13:%d:00' % (10 * n)
         level = 'Error' if row['status'] == 'Failure' else 'Info'
         msg = 'machine %d in status %s ' % (row['id'], row['status'])
-        data.append(dict(machine_if=row['id'], timestamp=timestamp, level=level, msg=msg))
+        data.append(dict(machine_id=row['id'], timestamp=timestamp, level=level, msg=msg))
     # Adding fake warnings from the predictive maintenance algorithm
     data.append(dict(machine_id=5, timestamp='2019-05-23 13:45:00', level='Warning',
                      msg='Machine 5 with high probability of failing in the next 3 days'))

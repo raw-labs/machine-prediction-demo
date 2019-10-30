@@ -163,7 +163,7 @@ Utils.request('{{url_for('machines_warnings')}}', {
             } else {
                 icon = ''
             }
-            msg = '<a href="/machine/{0}">{1}</a>'.format(x.machine_id, x.msg)
+            msg = '<a href="/machines/{0}">{1}</a>'.format(x.machine_id, x.msg)
             return `<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>`.format(icon, x.timestamp, x.level, msg)
         });
 
