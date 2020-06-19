@@ -4,22 +4,17 @@
 
 import datetime
 import glob
-
-import os
-from functools import wraps
-
-from logging import Formatter, FileHandler
-from flask import Flask, render_template, request, jsonify, url_for, session, redirect
-from authlib.flask.client import OAuth
-from six.moves.urllib.parse import urlencode
-
-from rawapi import new_raw_client
-import logging
 import json
-import uuid
+import logging
+import os
+import subprocess
 import tempfile
+import uuid
+from logging import Formatter, FileHandler
 
 import prediction_models
+from flask import Flask, render_template, request, jsonify, url_for, redirect
+from rawapi import new_raw_client, RawException, Unauthorized
 
 # ----------------------------------------------------------------------------#
 # App Config.
@@ -33,34 +28,103 @@ logging.basicConfig(
 )
 
 
-client = new_raw_client()
+def with_login(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except RawException as ex:
+            if 'rawcli login' in str(ex):
+                subprocess.call(['rawcli', 'login'])
+                return func(*args, **kwargs)
+            else:
+                raise ex
+        except Unauthorized:
+            subprocess.call(['rawcli', 'login', '-f'])
+            return func(*args, **kwargs)
+
+    return wrapper
 
 
-def init_packages():
-    # Registering buckets
-    with open(os.path.join('raw_ini', 'buckets.txt')) as f:
-        buckets = client.buckets_list()
-        for line in f.readlines():
-            values = line.split()
-            if len(values) < 1:
-                continue
+@with_login
+def get_client():
+    return new_raw_client()
 
-            name = values[0]
-            region = values[1] if len(values) >= 2 else None
-            access_key = values[2] if len(values) >= 3 else None
-            secret_key = values[3] if len(values) >= 4 else None
 
-            if name not in buckets:
-                app.logger.info('Registering bucket s3://%s' % name)
-                client.buckets_register(name, region, access_key, secret_key)
+client = get_client()
 
-    packages = client.packages_list_names()
-    # Registering packages
-    for filename in glob.glob(os.path.join('raw_ini', 'packages/*.rql')):
-        name = os.path.basename(filename[:-4])
-        if name in packages:
-            app.logger.warning('overwriting package %s' % name)
-            client.packages_drop(name)
+
+@with_login
+def query(q):
+    return client.query(q)
+
+
+def read_values(f, properties):
+    output = []
+    for line in f.readlines():
+        values = line.split()
+        if len(values) < 1:
+            continue
+        d = dict()
+
+        for n, name in enumerate(properties):
+            if n < len(values):
+                d[name] = values[n]
+            else:
+                d[name] = None
+        output.append(d)
+    return output
+
+
+"""Initializes packages, s3 buckets, etc for this session"""
+# Registering buckets
+with open(os.path.join('raw_ini', 'buckets.txt')) as f:
+    buckets = client.buckets_list()
+    config = read_values(f, ["name", "region", "access_key", "secret_key"])
+    for b in config:
+        if b["name"] not in buckets:
+            app.logger.info('Registering bucket s3://%s' % b["name"])
+            client.buckets_register(b["name"], b["region"], b["access_key"], b["secret_key"])
+
+try:
+    with open(os.path.join('raw_ini', 'rdbms.txt')) as f:
+        servers = client.rdbms_list()
+        config = read_values(f, ["name", "type", "host", "port", "db", "user", "passwd"])
+        for s in config:
+            if s["name"] not in servers:
+                if s["type"] == "postgresql":
+                    client.rdbms_register_postgresql(s["name"], s["host"], s["db"], int(s["port"]), s["user"],
+                                                     s["passwd"])
+                elif s["type"] == "sqlserver":
+                    client.rdbms_register_sqlserver(s["name"], s["host"], s["db"], int(s["port"]), s["user"],
+                                                    s["passwd"])
+                elif s["type"] == "oracle":
+                    client.rdbms_register_oracle(s["name"], s["host"], s["db"], int(s["port"]), s["user"], s["passwd"])
+                elif s["type"] == "mysql":
+                    client.rdbms_register_mysql(s["name"], s["host"], s["db"], int(s["port"]), s["user"], s["passwd"])
+                else:
+                    app.logger.error('unsupported database type %s, skipping' % s["type"])
+except FileNotFoundError:
+    app.logger.info("no file found with dbms servers")
+
+views = client.views_list_names()
+print(views)
+# creating views
+files = glob.glob(os.path.join('raw_ini', 'views/*.rql'))
+files.sort()
+for filename in files:
+    # view filenames are prepended with a number '01_' which specifies the order for creating the view
+    # so removing first 3 characters and last 4 (file extension)
+    name = os.path.basename(filename)[3:-4]
+    if name not in views:
+        with open(filename) as f:
+            app.logger.info('creating view %s' % name)
+            client.views_create(name, f.read())
+
+packages = client.packages_list_names()
+# Registering packages
+for filename in glob.glob(os.path.join('raw_ini', 'packages/*.rql')):
+    name = os.path.basename(filename[:-4])
+    if name not in packages:
         with open(filename) as f:
             app.logger.info('registering package %s' % name)
             client.packages_create(name, f.read())
@@ -79,11 +143,10 @@ def home():
     return redirect(url_for('machines'))
 
 
-
 @app.route('/machines/list')
 def machines_list():
     """List all available machines with main data"""
-    data = client.query('''
+    data = query('''
         from machine_maintenance import machine_data, maint;
         
         select machineID as id,
@@ -91,7 +154,7 @@ def machines_list():
                         age,
                         lat,
                         long,
-                        cast((select max(m.datetime) from maint m where m.machineID=machineID) as date ) as lmaint,
+                        (select max(m.datetime) from maint m where m.machineID=machineID) as lmaint,
                         cast((select max(f.datetime) from failures f)  as date) as lfailure,
                         status
                     from machine_data''')
@@ -106,7 +169,7 @@ def machines_list():
 @app.route('/machines/warnings')
 def machines_warnings():
     """Service to get current warnings on machines."""
-    results = client.query('''
+    results = query('''
         from machine_maintenance import machines;
         
         select machineID as id,
@@ -119,7 +182,7 @@ def machines_warnings():
     for n, row in enumerate(results):
         timestamp = '2019-05-23 13:%d:00' % (10 * n)
         level = 'Error' if row['status'] == 'Failure' else 'Info'
-        msg = 'machine %d in status %s ' % (row['id'], row['status'])
+        msg = 'machine %d in %s ' % (row['id'], row['status'])
         data.append(dict(machine_id=row['id'], timestamp=timestamp, level=level, msg=msg))
     # Adding fake warnings from the predictive maintenance algorithm
     data.append(dict(machine_id=5, timestamp='2019-05-23 13:45:00', level='Warning',
@@ -132,7 +195,7 @@ def machines_warnings():
 @app.route('/machines/report/failures_month')
 def machines_failures_month():
     """Service just for plot 1 in main page"""
-    results = client.query('''
+    results = query('''
         from machine_maintenance import failures, machines;
         
         select month,
@@ -144,10 +207,25 @@ def machines_failures_month():
     return jsonify(list(results))
 
 
+@app.route('/machines/report/errors_month')
+def machines_errors_month():
+    """Service just for plot 1 in main page"""
+    results = query('''
+        from machine_maintenance import errors, machines;
+        
+        select month,
+                select count(*) from * p group by p.model model order by model
+                from errors e, machines m
+            where e.machineID = m.machineID and e.datetime > date "2015-01-01"
+                group by month(e.datetime) month
+                order by month''')
+    return jsonify(list(results))
+
+
 @app.route('/machines/report/failures_model')
 def machines_failures_model():
     """Service just for plot 2 in main page"""
-    results = client.query('''
+    results = query('''
         from machine_maintenance import failures, machines;
         
         select "machine " + mach as machine, count(*) N
@@ -155,7 +233,7 @@ def machines_failures_model():
             where f.machineID = m.machineID and f.datetime > date "2015-01-01"
                 group by f.machineID mach
                 order by N desc
-            limit 10''')
+            limit 20''')
     return jsonify(list(results))
 
 
@@ -167,12 +245,12 @@ logging.info("using %s as features folder" % features_dir.name)
 def machines_create_features():
     """Creates features for predictive maintenance training"""
     data = request.json
-    q = client.query('''
+    q = query('''
         from machine_maintenance import features;
         
         select f.features, if (f.failure = 0) then 0 else 1 as failure
         from features(interval "{0} days", interval "{1} days", date "{2}", date "{3}") f '''
-                     .format(data['measureDays'], data['predictionDays'], data['start'], data['end']))
+              .format(data['measureDays'], data['predictionDays'], data['start'], data['end']))
     features = list(q)
     failures = 0
     good = 0
@@ -212,7 +290,7 @@ def machines_train():
 @app.route('/machines/<int:machine_id>/status/')
 def machine_status(machine_id):
     """Service for individual machine status"""
-    results = client.query('''
+    results = query('''
         from machine_maintenance import machine_data, maint;
 
          select lat, long, model, age, status,
@@ -230,7 +308,7 @@ def machine_telemetry(machine_id):
         needs url encoded arguments for start and end of measurements"""
     start = request.args.get('start')
     end = request.args.get('end')
-    results = client.query('''
+    results = query('''
          from machine_maintenance import machine_data;
          start := date "%s";
          end := date "%s";
@@ -280,7 +358,6 @@ if not app.debug:
 
 # Default port:
 if __name__ == '__main__':
-    init_packages()
     app.run()
 
 # Or specify port manually:

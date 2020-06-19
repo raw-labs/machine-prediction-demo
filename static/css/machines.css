@@ -13,6 +13,9 @@
     min-height: 200px;
 }
 
+#machine-geo {
+    max-height: 200px;
+}
 
 #failures-month {
     height: 50%;

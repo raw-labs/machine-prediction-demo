@@ -47,17 +47,44 @@ Utils.createSpinner = function() {
     return spinner;
 }
 
+Utils.test = function(value) {
+	return value*2;
+}
+
 Utils.machineIcon = function(model, size) {
     switch(model) {
             case 'model1':
-                return "/static/img/machines/icons8-bot-{0}.png".format(size);
+                //return "/static/img/machines/icons8-bot-{0}.png".format(size);
+                return "/static/img/MapMarkers/blue_{0}.png".format(size);
             case 'model2':
-                return "/static/img/machines/icons8-robot-3-{0}.png".format(size);
+                //return "/static/img/machines/icons8-robot-3-{0}.png".format(size);
+                return "/static/img/MapMarkers/yellow_{0}.png".format(size);
             case 'model3':
-                return "/static/img/machines/icons8-robot-2-{0}.png".format(size)
+                //return "/static/img/machines/icons8-robot-2-{0}.png".format(size);
+                return "/static/img/MapMarkers/green_{0}.png".format(size);
             case 'model4':
-                return "/static/img/machines/icons8-robot-{0}.png".format(size)
+                //return "/static/img/machines/icons8-robot-{0}.png".format(size);
+                return "/static/img/MapMarkers/red_{0}.png".format(size);
     }
+}
+
+Utils.machineGaugeIcon = function(value) {
+	switch(value) {
+            case (value < 15):
+                return "/static/img/gauges/gaugevlow.gif";
+            case (value < 30):
+                return "/static/img/gauges/gaugelow.gif";
+            case (value < 45):
+                return "/static/img/gauges/gaugemlow.gif";
+            case (value < 60):
+                return "/static/img/gauges/gaugemedium.gif";
+            case (value < 75):
+                return "/static/img/gauges/gaugemhigh.gif";
+            case (value < 90):
+                return "/static/img/gauges/gaugehigh.gif";
+        	case (value < 99):
+                return "/static/img/gauges/gaugevhigh.gif";
+    }	 
 }
 
 // taken from https://stackoverflow.com/questions/610406/javascript-equivalent-to-printf-string-format

@@ -43,61 +43,161 @@ table {
     /*height: 100%;*/
 }
 
+.row_plot {
+    height: 30%;
+}
+
 table {
     font-size: 80%;
 }
 
 </style>
 
-<div id="main-cont" class="container-fluid">
-    <div class="col-md-7">
-        <div class="panel panel-default">
-            <div class="panel-heading">Machines</div>
-            <div class="panel-body">
-                <div class="row" id="row-machines">
-                    <div class="col-md-5">
+
+<div class="row">
+
+	<div class="col-md-6">
+		<div class="panel panel-default">
+			<div class="panel-heading">Machines</div>
+			<div class="panel-body">
+			
+				<div class="row" id="row-machines">
+					<div class="col-md-4">
+					<h5>List</h5>
                         <div id="machines-table" class="table-container">
                             <table class="table table-striped">
                                 <thead>
-                                <tr>
-                                    <th scope="col">id</th>
-                                    <th scope="col">model</th>
-                                    <th scope="col">age</th>
-                                    <th scope="col">Last Maintenance</th>
-                                    <th scope="col">Status</th>
-                                </tr>
+                                	<tr>
+                                    	<th scope="col">id</th>
+                                    	<th scope="col">model</th>
+                                    	<th scope="col">age</th>
+                                    	<th scope="col">Last Maint.</th>
+                                    	<th scope="col">Status</th>
+                                	</tr>
                                 </thead>
                                 <tbody>
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                    <div class="col-md-7 plot" id="machines-geo"></div>
-                </div>
-                <div class="row" id="row-warnings">
-                    <div class="table-container" id="warnings-table">
-                        <table class="table table-striped">
-                            <thead>
-                            <tr>
-                                <th scope="col"></th>
-                                <th scope="col">Timestamp</th>
-                                <th scope="col">Severity</th>
-                                <th scope="col">Message</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                        </table>
+                    <div class="col-md-8">
+                    	<h5>Map</h5>
+                    	<div id="machines-geo" style="height: 100%"></div>
                     </div>
+				</div>
+				
+				<div class="row" id="row-warnings">
+					<div class="col-md-12">
+					<h5>Latest Failures</h5>
+						<div class="table-container" id="warnings-table">
+                        	<table class="table table-striped">
+                            	<thead>
+                            		<tr>
+                                		<th scope="col"></th>
+                                		<th scope="col">Timestamp</th>
+                                		<th scope="col">Severity</th>
+                                		<th scope="col">Message</th>
+                            		</tr>
+                            	</thead>
+                            	<tbody></tbody>
+                        	</table>
+                    	</div>
+					</div>
+				</div>
+				
+			</div>
+  		</div>
+    </div>
+    
+    <div class="col-md-6">
+  		<div class="panel panel-default">
+        	<div class="panel-heading">Charts by Model</div>
+    		<div class="panel-body">
+    			<div class="row">
+    				<div class="col-md-12">
+    					<div class="row_plot" id="failures-machine"></div>
+    				</div>
+    			</div>
+    			<div class="row">
+    				<div class="col-md-6">
+       	 				<div class="row_plot" id="errors-month"></div>
+       	 			</div>
+       	 			<div class="col-md-6">
+        				<div class="row_plot" id="failures-month"></div>
+        			</div>
+        		</div>
+        	</div>
+    	</div>
+  	</div>
+</div>
+
+<!--
+<div class="row">
+    <div class="col-md-7">
+        <div class="panel panel-default">
+            <div class="panel-heading">Machines</div>
+            <div class="panel-body">
+                <div class="row" id="row-machines">
+                    <div class="col-md-4">
+                        <div id="machines-table" class="table-container">
+                            <table class="table table-striped">
+                                <thead>
+                                	<tr>
+                                    	<th scope="col">id</th>
+                                    	<th scope="col">model</th>
+                                    	<th scope="col">age</th>
+                                    	<th scope="col">Last Maint.</th>
+                                    	<th scope="col">Status</th>
+                                	</tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-8 plot" id="machines-geo"></div>
+                </div>
+            </div>
+                
+            <div class="row" id="row-failures">
+            	<div class="col-md-7">
+            		<div class="panel panel-default">
+            			<div class="panel-heading">Most Recent Failures</div>
+            			<div class="panel-body">
+                			<div class="row" id="row-warnings">
+                    			<div class="table-container" id="warnings-table">
+                        			<table class="table table-striped">
+                            			<thead>
+                            				<tr>
+                                				<th scope="col"></th>
+                                				<th scope="col">Timestamp</th>
+                                				<th scope="col">Severity</th>
+                                				<th scope="col">Message</th>
+                            				</tr>
+                            			</thead>
+                            			<tbody>
+                            			</tbody>
+                        		</table>
+                    		</div>
+                		</div>
+                	</div>
                 </div>
             </div>
         </div>
     </div>
+    	
     <div class="col-md-5">
-        <div class="row plot" id="failures-month"></div>
-        <div class="row plot" id="failures-machine"></div>
+    	<div class="panel panel-default">
+            <div class="panel-heading">Charts by Model</div>
+            <div class="panel-body">
+        		<div class="row plot" id="failures-month"></div>
+       	 		<div class="row plot" id="errors-month"></div>
+        		<div class="row plot" id="failures-machine"></div>
+        	</div>
+        </div>
     </div>
 </div>
+-->
 
 <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyC4o8qkCrbHngwyPSIizV2RGHmyvDmgmXM"></script>
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
@@ -112,9 +212,10 @@ Utils.request('{{url_for('machines_list')}}', {
         // drawing table
         //TODO: check howto do this with {{ url_for('home') }}
         var rows = data.map(function(x) {
-            return `<tr></th><td>{0}</td><td>{1}</td><td>{2}</td>
-                        <td>{3}</td><td><a href="{5}">{4}</a></td></tr>`
-                .format(x.id, x.model, x.age, x.lmaint, x.status,x.url)
+        	y = x.lmaint.substring(5,17);
+            return `<tr></th><td><a href="{5}">{0}</a></td><td>{1}</td><td>{2}</td>
+                        <td>{3}</td><td>{4}</td></tr>`
+                .format(x.id, x.model, x.age, y, x.status,x.url)
         });
         widget.find('#machines-table tbody').html(rows.join('\n'));
 
@@ -122,7 +223,7 @@ Utils.request('{{url_for('machines_list')}}', {
         var geoData = [["lat", "long", "msg", "icon"]];
         data.forEach(function(x) {
             geoData.push(
-                [x.lat, x.long,"machine {0}, {1}".format(x.id, x.model), x.model]
+                [x.lat, x.long,"<a href='" + x.url +  "'>machine {0}</a>, {1}".format(x.id, x.model), x.model]
             );
         })
 
@@ -140,7 +241,7 @@ Utils.request('{{url_for('machines_list')}}', {
         }
 
         options = {
-            mapType: 'normal',
+            mapType: 'terrain',
             showTip: true,
             icons: icons
         }
@@ -155,11 +256,11 @@ Utils.request('{{url_for('machines_warnings')}}', {
         var rows = data.map(function(x) {
             var icon = '';
             if (x.level == 'Info') {
-                icon = '<span class="glyphicon glyphicon-exclamation-sign"></span>'
+                icon = '<span style="font-size:170%; color:green;" class="glyphicon glyphicon-exclamation-sign"></span>'
             } else if (x.level == 'Warning') {
-                icon = '<span class="glyphicon glyphicon-warning-sign"></span>'
+                icon = '<span style="font-size:170%; color:orange;" class="glyphicon glyphicon-warning-sign"></span>'
             } else if (x.level == 'Error') {
-                 icon = '<span class="glyphicon glyphicon-remove-sign"></span>'
+                 icon = '<span style="font-size:170%; color:red;" class="glyphicon glyphicon-remove-sign"></span>'
             } else {
                 icon = ''
             }
@@ -182,10 +283,28 @@ Utils.request('{{url_for('machines_failures_month')}}', {
                 x: labels,
                 y: data.map(function(x) {return x._2[i];}),
                 name: "model " + (i + 1),
-                type: "scatter"
+                type: "bar"
             })
         }
-        Plotly.newPlot(widget.get(0), traces, { title:'Failures last year'});
+        Plotly.newPlot(widget.get(0), traces, { title:'Failures last year', barmode: 'stack'});
+    }
+});
+
+Utils.request('{{url_for('machines_errors_month')}}', {
+    selector: '#errors-month',
+    success: function(data, widget) {
+        var labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        var traces = [];
+        for(var i = 0 ; i < 4 ; i++) {
+
+            traces.push({
+                x: labels,
+                y: data.map(function(x) {return x._2[i];}),
+                name: "model " + (i + 1),
+                type: "bar"
+            })
+        }
+        Plotly.newPlot(widget.get(0), traces, { title:'Errors last year', barmode: 'stack'});
     }
 });
 
