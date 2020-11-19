@@ -28,32 +28,8 @@ logging.basicConfig(
 )
 
 
-def with_login(func):
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except RawException as ex:
-            if 'rawcli login' in str(ex):
-                subprocess.call(['rawcli', 'login'])
-                return func(*args, **kwargs)
-            else:
-                raise ex
-        except Unauthorized:
-            subprocess.call(['rawcli', 'login', '-f'])
-            return func(*args, **kwargs)
+client = new_raw_client()
 
-    return wrapper
-
-
-@with_login
-def get_client():
-    return new_raw_client()
-
-
-client = get_client()
-
-
-@with_login
 def query(q):
     return client.query(q)
 
@@ -205,7 +181,7 @@ def machines_failures_month():
                 group by month(f.datetime) month
                 order by month''')
     return jsonify(list(results))
-
+    
 
 @app.route('/machines/report/errors_month')
 def machines_errors_month():
@@ -250,7 +226,7 @@ def machines_create_features():
         
         select f.features, if (f.failure = 0) then 0 else 1 as failure
         from features(interval "{0} days", interval "{1} days", date "{2}", date "{3}") f '''
-              .format(data['measureDays'], data['predictionDays'], data['start'], data['end']))
+                     .format(data['measureDays'], data['predictionDays'], data['start'], data['end']))
     features = list(q)
     failures = 0
     good = 0
